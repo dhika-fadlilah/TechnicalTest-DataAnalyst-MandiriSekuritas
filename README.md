@@ -20,13 +20,13 @@ Dashboard interaktif kemudian dibuat di **Looker Studio** dengan filter tahun, K
 ## ⚡ Langkah Menjalankan
 
 ### 1. Persiapan Data
-- Bersihkan data menggunakan script Python (`cleaning_transactions.ipynb`).  
+- Bersihkan data menggunakan script Python (`cleaning_data.ipynb`).  
 - Simpan hasil cleaning dalam CSV part (≤100MB per file).  
 - Upload semua file ke **Google BigQuery** menggunakan wildcard (`transactions_part*`) agar terbaca sebagai satu tabel.  
 - Buat tabel tambahan untuk `users_data` dan `cards_data`.
 
 ### 2. Buat Summary Tables di BigQuery
-Jalankan query di file SQL Queries untuk membuat summary tables:
+Jalankan query di file `SQL Queries` untuk membuat summary tables:
 
 - **`transactions_summary`** → Ringkasan transaksi bulanan + KPI Cards  
 - **`transactions_per_gender`** → Total transaksi berdasarkan gender  
@@ -62,7 +62,7 @@ Jalankan query di file SQL Queries untuk membuat summary tables:
 
 ## 🚀 Cara Replikasi
 1. Clone repo ini  
-2. Jalankan notebook cleaning di `/notebooks/cleaning_transactions.ipynb`  
+2. Jalankan notebook cleaning di `/notebooks/cleaning_data.ipynb`  
 3. Upload hasil CSV ke BigQuery  
-4. Jalankan query di `/sql_queries/queries.sql` untuk membangun summary tables  
-5. Buat dashboard di Looker Studio dengan data dari summary tables  
+4. Jalankan query di `SQL Queries` untuk membangun summary tables  
+5. Buat dashboard di Looker Studio dengan menghubungkan tabel hasil query  
