@@ -1,0 +1,91 @@
+#Transactions Summary
+CREATE OR REPLACE TABLE `dataanalystmandiri.userbehavior.transactions_summary` AS
+SELECT 
+   EXTRACT(YEAR FROM CAST(t.date AS DATE)) AS year,
+  EXTRACT(MONTH FROM CAST(t.date AS DATE)) AS month_num,
+  FORMAT_DATE('%B', CAST(t.date AS DATE)) AS month_name,
+  FORMAT_DATE('%Y-%m', CAST(t.date AS DATE)) AS year_month,
+
+  COUNT(t.id) AS total_transactions,
+  SUM(t.amount) AS total_amount,
+  AVG(t.amount) AS avg_amount,
+  COUNT(DISTINCT t.client_id) AS total_users,
+  SAFE_DIVIDE(SUM(t.amount), COUNT(DISTINCT t.client_id)) AS avg_spend_per_user,
+
+  COUNTIF(t.errors IS NULL OR t.errors = '') / COUNT(t.id) * 100 AS success_rate
+FROM `dataanalystmandiri.userbehavior.transactions_part_*` t
+GROUP BY year, month_num, month_name, year_month
+ORDER BY year, month_num;
+
+#Transactions per Gender
+CREATE OR REPLACE TABLE `dataanalystmandiri.userbehavior.transactions_per_gender` AS
+SELECT 
+  u.gender,
+  COUNT(t.id) AS total_transactions,
+  SUM(t.amount) AS total_amount,
+  AVG(t.amount) AS avg_amount
+FROM `dataanalystmandiri.userbehavior.transactions_part_*` t
+JOIN `dataanalystmandiri.userbehavior.users_data` u
+  ON t.client_id = u.id
+GROUP BY u.gender;
+
+#Top 10 Merchant States
+CREATE OR REPLACE TABLE `dataanalystmandiri.userbehavior.top_merchant_states` AS
+SELECT 
+  merchant_state,
+  COUNT(id) AS total_transactions,
+  SUM(amount) AS total_amount
+FROM `dataanalystmandiri.userbehavior.transactions_part_*`
+WHERE merchant_state IS NOT NULL
+GROUP BY merchant_state
+ORDER BY total_transactions DESC
+LIMIT 10;
+
+#Avg Spend per User by Credit Score Group
+CREATE OR REPLACE TABLE `dataanalystmandiri.userbehavior.avg_spend_per_creditscore` AS
+SELECT 
+  CASE 
+    WHEN u.credit_score < 600 THEN 'Low'
+    WHEN u.credit_score BETWEEN 600 AND 749 THEN 'Medium'
+    ELSE 'High'
+  END AS credit_score_group,
+  SUM(t.amount) / COUNT(DISTINCT t.client_id) AS avg_spend_per_user
+FROM `dataanalystmandiri.userbehavior.transactions_part_*` t
+JOIN `dataanalystmandiri.userbehavior.users_data` u
+  ON t.client_id = u.id
+GROUP BY credit_score_group
+ORDER BY credit_score_group;
+
+#Transactions by Card Type
+CREATE OR REPLACE TABLE `dataanalystmandiri.userbehavior.transactions_by_cardtype` AS
+SELECT
+  EXTRACT(YEAR FROM CAST(t.date AS DATE)) AS year,
+  EXTRACT(MONTH FROM CAST(t.date AS DATE)) AS month_num,
+  FORMAT_DATE('%B', CAST(t.date AS DATE)) AS month_name,
+  COALESCE(c.card_type, 'UNKNOWN') AS card_type,
+  COUNT(t.id) AS total_transactions,
+  SUM(t.amount) AS total_amount,
+  AVG(t.amount) AS avg_amount
+FROM `dataanalystmandiri.userbehavior.transactions_part_*` t
+LEFT JOIN `dataanalystmandiri.userbehavior.cards_data` c
+  ON t.card_id = c.id
+GROUP BY year, month_num, month_name, card_type
+ORDER BY year, month_num;
+
+#Average Spend per User by Age Group
+CREATE OR REPLACE TABLE `dataanalystmandiri.userbehavior.avgspend_by_agegroup` AS
+SELECT
+  CASE
+    WHEN u.current_age BETWEEN 18 AND 30 THEN '18-30'
+    WHEN u.current_age BETWEEN 31 AND 45 THEN '31-45'
+    WHEN u.current_age BETWEEN 46 AND 60 THEN '46-60'
+    WHEN u.current_age BETWEEN 61 AND 75 THEN '61-75'
+    WHEN u.current_age BETWEEN 76 AND 101 THEN '76-101'
+    ELSE 'Other'
+  END AS age_group,
+  ROUND(SUM(t.amount) / COUNT(DISTINCT u.id), 2) AS avg_spend_per_user
+FROM `dataanalystmandiri.userbehavior.transactions_part_*` t
+JOIN `dataanalystmandiri.userbehavior.users_data` u
+  ON t.client_id = u.id
+GROUP BY age_group
+ORDER BY age_group;
